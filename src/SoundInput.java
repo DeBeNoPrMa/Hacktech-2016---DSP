@@ -16,14 +16,14 @@ import java.util.List;
 public class SoundInput implements OnsetHandler {
     // Audio helper classes
     Mixer soundMixer;
-    AudioDispatcher dispatcher;
+    BetterAudioDispatcher dispatcher;
 
     // Parameters
-    double sensitivity = 60;
+    double sensitivity = 45;
     double threshold = 10;
 
-    final int sampleRate = 6000;
-    final int bufferSize = 256;
+    final int sampleRate = 1000;
+    final int bufferSize = 128;
     final int overlap = 0;
 
     public SoundInput() {
@@ -58,7 +58,7 @@ public class SoundInput implements OnsetHandler {
 
         JVMAudioInputStream audioStream = new JVMAudioInputStream(stream);
 
-        dispatcher = new AudioDispatcher(audioStream, bufferSize, overlap);
+        dispatcher = new BetterAudioDispatcher(audioStream, bufferSize, overlap);
 
         // add a processor, handle percussion event.
         dispatcher.addAudioProcessor(
