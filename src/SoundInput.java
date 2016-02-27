@@ -2,8 +2,13 @@ import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.io.jvm.JVMAudioInputStream;
 import be.tarsos.dsp.onsets.OnsetHandler;
 import be.tarsos.dsp.onsets.PercussionOnsetDetector;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import javax.sound.sampled.*;
+import javax.swing.*;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Marce Coll on 27/02/16.
@@ -14,9 +19,8 @@ public class SoundInput implements OnsetHandler {
     AudioDispatcher dispatcher;
 
     // Parameters
-    double sensitivity;
-    double threshold;
-    int counter;
+    double sensitivity = 0;
+    double threshold = 0;
 
     final int sampleRate = 44100;
     final int bufferSize = 512;
@@ -25,14 +29,14 @@ public class SoundInput implements OnsetHandler {
     public SoundInput() {
         // Setup the sound dispatcher
         try {
-            setupDispatcher(soundMixer);
+            setupDispatcher();
         } catch (LineUnavailableException | UnsupportedAudioFileException e) {
             System.out.println("Shit is nuts yo!");
             e.printStackTrace();
         }
     }
 
-    public void setupDispatcher(Mixer mixer)
+    public void setupDispatcher()
             throws LineUnavailableException,
             UnsupportedAudioFileException
     {
@@ -41,15 +45,13 @@ public class SoundInput implements OnsetHandler {
         // Info about the sound data line
         final DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, audioFormat);
 
-        if (dispatcher != null) {
-            dispatcher.stop();
+        soundMixer = getMixerByName("Built-in Microphone");
+        if(soundMixer == null) {
+            throw new LineUnavailableException();
         }
 
-        soundMixer = mixer;
-
-        // TODO Filter the devices to get the mic we want
         TargetDataLine line;
-        line = (TargetDataLine) mixer.getLine(dataLineInfo);
+        line = (TargetDataLine) soundMixer.getLine(dataLineInfo);
         line.open(audioFormat, sampleRate);
         line.start();
         final AudioInputStream stream = new AudioInputStream(line);
@@ -62,15 +64,45 @@ public class SoundInput implements OnsetHandler {
         dispatcher.addAudioProcessor(
                 new PercussionOnsetDetector(sampleRate,
                         bufferSize,
-                        this, sensitivity,
+                        this,
+                        sensitivity,
                         threshold));
 
         // run the dispatcher (on a new thread).
         new Thread(dispatcher, "Audio dispatching").start();
     }
 
+    public static void main(String... strings)
+            throws InterruptedException,
+            InvocationTargetException
+    {
+        SwingUtilities.invokeAndWait(() -> {
+            System.out.println("Initializing");
+            SoundInput si = new SoundInput();
+        });
+    }
+
     @Override
-    public void handleOnset(double time, double salience) {
-        // ADD TO GAME QUEUE
+    public void handleOnset(double v, double v1) {
+        System.out.println("Percussion");
+    }
+
+    // PRIVATES
+    private List<Mixer.Info> getMixers() {
+        List<Mixer.Info> ret = new ArrayList<>();
+
+        for (Mixer.Info mi : AudioSystem.getMixerInfo()) {
+            ret.add(mi);
+        }
+        return ret;
+    }
+
+    private Mixer getMixerByName(String name) {
+        for(Mixer.Info mi : getMixers()) {
+            if(mi.getName().equals(name)) {
+                return AudioSystem.getMixer(mi);
+            }
+        }
+        return null;
     }
 }
