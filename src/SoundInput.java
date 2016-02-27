@@ -23,26 +23,31 @@ public class SoundInput implements OnsetHandler {
     final int overlap = 0;
 
     public SoundInput() {
-        // TODO
+        // Setup the sound dispatcher
+        try {
+            setupDispatcher(soundMixer);
+        } catch (LineUnavailableException | UnsupportedAudioFileException e) {
+            System.out.println("Shit is nuts yo!");
+            e.printStackTrace();
+        }
     }
 
-    public SoundInput()
-
-    public void generateNewMixer(Mixer mixer)
+    public void setupDispatcher(Mixer mixer)
             throws LineUnavailableException,
             UnsupportedAudioFileException
     {
         // float sampleRate, int sampleSizeInBits, int channels, boolean signed, boolean bigEndian
         final AudioFormat audioFormat = new AudioFormat(sampleRate, 16, 1, true, true);
         // Info about the sound data line
-        final DataLine.Info dataLineInfo  = new DataLine.Info(TargetDataLine.class, audioFormat);
+        final DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, audioFormat);
 
-        if(dispatcher != null) {
+        if (dispatcher != null) {
             dispatcher.stop();
         }
 
         soundMixer = mixer;
 
+        // TODO Filter the devices to get the mic we want
         TargetDataLine line;
         line = (TargetDataLine) mixer.getLine(dataLineInfo);
         line.open(audioFormat, sampleRate);
@@ -56,12 +61,16 @@ public class SoundInput implements OnsetHandler {
         // add a processor, handle percussion event.
         dispatcher.addAudioProcessor(
                 new PercussionOnsetDetector(sampleRate,
-                                            bufferSize,
-                                            this,sensitivity,
-                                            threshold));
+                        bufferSize,
+                        this, sensitivity,
+                        threshold));
 
         // run the dispatcher (on a new thread).
-        new Thread(dispatcher,"Audio dispatching").start();
+        new Thread(dispatcher, "Audio dispatching").start();
     }
+
+    @Override
+    public void handleOnset(double time, double salience) {
+        // ADD TO GAME QUEUE
     }
 }
