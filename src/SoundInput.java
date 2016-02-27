@@ -19,10 +19,10 @@ public class SoundInput implements OnsetHandler {
     AudioDispatcher dispatcher;
 
     // Parameters
-    double sensitivity = 0;
-    double threshold = 0;
+    double sensitivity = 40;
+    double threshold = 10;
 
-    final int sampleRate = 44100;
+    final int sampleRate = 6000;
     final int bufferSize = 512;
     final int overlap = 0;
 
@@ -62,7 +62,7 @@ public class SoundInput implements OnsetHandler {
 
         // add a processor, handle percussion event.
         dispatcher.addAudioProcessor(
-                new PercussionOnsetDetector(sampleRate,
+                new PercussionDetector(sampleRate,
                         bufferSize,
                         this,
                         sensitivity,
