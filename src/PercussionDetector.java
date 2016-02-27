@@ -62,6 +62,7 @@ public class PercussionDetector implements AudioProcessor, OnsetDetector {
                     binsOverThreshold++;
                 }
             }
+
             priorMagnitudes[i] = currentMagnitudes[i];
         }
 

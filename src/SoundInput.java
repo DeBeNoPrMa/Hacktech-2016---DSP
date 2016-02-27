@@ -19,11 +19,11 @@ public class SoundInput implements OnsetHandler {
     AudioDispatcher dispatcher;
 
     // Parameters
-    double sensitivity = 40;
+    double sensitivity = 60;
     double threshold = 10;
 
     final int sampleRate = 6000;
-    final int bufferSize = 512;
+    final int bufferSize = 256;
     final int overlap = 0;
 
     public SoundInput() {
@@ -84,7 +84,7 @@ public class SoundInput implements OnsetHandler {
 
     @Override
     public void handleOnset(double v, double v1) {
-        System.out.println("Percussion");
+        System.out.println("Percussion at " + v);
     }
 
     // PRIVATES
