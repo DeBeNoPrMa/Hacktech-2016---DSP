@@ -33,7 +33,7 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
 
     // Parameters
     double sensitivity = 35;
-    double threshold = 150;
+    double threshold = 5;
 
     final int sampleRate = 44200;
     final int bufferSize = 1024;
@@ -80,6 +80,10 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
         this.bpm = bpm;
 
         noteBuffer = new Note[(int)Math.ceil(getTimeBetweenEighthNotes()*sampleRate/bufferSize)];
+        System.out.println(getTimeBetweenEighthNotes());
+        System.out.println(getTimeBetweenEighthNotes()*sampleRate/bufferSize);
+        System.out.println((int)Math.ceil(getTimeBetweenEighthNotes()*sampleRate/bufferSize));
+
 
         // Setup music device and data line
         soundMixer = getMixerByName("Logitech Camera");
@@ -194,12 +198,12 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
 
     // Helper method to get number of eighth notes per second using bpm
     private float getEighthNotesPerSecond() {
-        return 30.0f/bpm;
+        return 1.0f/getEighthNotesPerSecond();
     }
 
     // Helper method to get time between to eighth notes
     private float getTimeBetweenEighthNotes() {
-        return 1.0f/getEighthNotesPerSecond();
+        return 30.0f/bpm;
     }
 
     // Helper method that returns the best fitting note in
