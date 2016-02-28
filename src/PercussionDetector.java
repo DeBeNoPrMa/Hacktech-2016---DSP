@@ -21,6 +21,9 @@ public class PercussionDetector implements AudioProcessor, OnsetDetector {
 
     private float dfMinus1, dfMinus2;
 
+    private float baselineAverage;
+    private int  baselineCounter;
+
     private OnsetHandler handler;
 
     private final float sampleRate;//samples per second (Hz)
@@ -29,6 +32,8 @@ public class PercussionDetector implements AudioProcessor, OnsetDetector {
     private final double sensitivity;
 
     private final double threshold;
+
+    //private float[] baselineAverageArray;
 
     public PercussionDetector(float sampleRate, int bufferSize,
                               int bufferOverlap, OnsetHandler handler) {
@@ -45,6 +50,7 @@ public class PercussionDetector implements AudioProcessor, OnsetDetector {
         currentMagnitudes = new float[bufferSize / 2];
         this.handler = handler;
         this.sampleRate = sampleRate;
+       // baselineAverageArray = new float[10];
     }
 
     private boolean isClap(float ra, float rb, float[] audioFloatBuffer) {
@@ -101,7 +107,7 @@ public class PercussionDetector implements AudioProcessor, OnsetDetector {
         int binsOverThreshold = 0;
         for (int i = 0; i < currentMagnitudes.length; i++) {
             if (priorMagnitudes[i] > 0.f) {
-                double diff = 10 * Math.log10(currentMagnitudes[i]
+                double diff = 20 * Math.log10(currentMagnitudes[i]
                         / priorMagnitudes[i]);
                 if (diff >= threshold) {
                     binsOverThreshold++;
@@ -124,6 +130,16 @@ public class PercussionDetector implements AudioProcessor, OnsetDetector {
         dfMinus1 = binsOverThreshold;
 
         return true;
+    }
+
+    public int clamp(int n, int min, int max) {
+        if(n > max){
+            return max;
+        } else if(n < min) {
+            return min;
+        } else {
+            return n;
+        }
     }
 
     public long millis_now;

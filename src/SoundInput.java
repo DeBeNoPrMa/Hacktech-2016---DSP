@@ -19,11 +19,11 @@ public class SoundInput implements OnsetHandler {
     BetterAudioDispatcher dispatcher;
 
     // Parameters
-    double sensitivity = 45;
+    double sensitivity = 35;
     double threshold = 10;
 
-    final int sampleRate = 1000;
-    final int bufferSize = 128;
+    final int sampleRate = 32768;
+    final int bufferSize = 1024;
     final int overlap = 0;
 
     public SoundInput() {
@@ -45,7 +45,7 @@ public class SoundInput implements OnsetHandler {
         // Info about the sound data line
         final DataLine.Info dataLineInfo = new DataLine.Info(TargetDataLine.class, audioFormat);
 
-        soundMixer = getMixerByName("Built-in Microphone");
+        soundMixer = getMixerByName("Logitech Camera");
         if(soundMixer == null) {
             throw new LineUnavailableException();
         }
