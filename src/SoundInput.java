@@ -24,10 +24,6 @@ enum Note {
     F, G, A, None
 }
 
-public interface PitchHandler {
-    public void insertIntoQueue();
-}
-
 public class SoundInput implements OnsetHandler, PitchDetectionHandler {
     // Audio helper classes
     Mixer soundMixer;
@@ -37,9 +33,9 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
 
     // Parameters
     double sensitivity = 35;
-    double threshold = 10;
+    double threshold = 150;
 
-    final int sampleRate = 44100;
+    final int sampleRate = 44200;
     final int bufferSize = 1024;
     final int overlap = 0;
 
@@ -47,13 +43,16 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
     float noteOffset = 0.0f;
     Map<Note, Float> baseFreq = new EnumMap<Note, Float>(Note.class);
     float bpm;
+    Note[] noteBuffer;
+    int noteBufferCounter;
+
 
     PitchHandler handler;
 
-    public SoundInput() {
+    public SoundInput(float bpm, PitchHandler h) {
         // Setup the sound dispatcher
         try {
-            setupDispatcher();
+            setupDispatcher(bpm, h);
         } catch (LineUnavailableException | UnsupportedAudioFileException e) {
             System.out.println("Shit is nuts yo!");
             e.printStackTrace();
@@ -80,7 +79,9 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
         handler = h;
         this.bpm = bpm;
 
-        // Setup music device
+        noteBuffer = new Note[(int)Math.ceil(getTimeBetweenEighthNotes()*sampleRate/bufferSize)];
+
+        // Setup music device and data line
         soundMixer = getMixerByName("Logitech Camera");
         if(soundMixer == null) {
             throw new LineUnavailableException();
@@ -97,14 +98,6 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
         // The dispatcher is the manager of the device, it routes the data to audio processors
         dispatcher = new BetterAudioDispatcher(audioStream, bufferSize, overlap);
 
-        // add a processor, handle percussion event.
-        /*dispatcher.addAudioProcessor(
-                new PercussionDetector(sampleRate,
-                        bufferSize,
-                        this,
-                        sensitivity,
-                        threshold));*/
-
         dispatcher.addAudioProcessor(
                 new PitchProcessor(algo, (float)sampleRate, bufferSize, this));
 
@@ -118,7 +111,7 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
     {
         SwingUtilities.invokeAndWait(() -> {
             System.out.println("Initializing");
-            SoundInput si = new SoundInput();
+            SoundInput si = new SoundInput(120, null);
         });
     }
 
@@ -134,12 +127,23 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
             double timeStamp = audioEvent.getTimeStamp();
             float pitch = pitchDetectionResult.getPitch();
 
-            Note note = getNoteByFrequency(pitch);
-            System.out.println(note.name());
+            noteBufferCounter++;
+            if(noteBufferCounter == (int)(getTimeBetweenEighthNotes()*sampleRate/bufferSize)) {
+                noteBufferCounter = 0;
+                Note result = getAveragedNote();
+                System.out.println(result.name());
+                noteBuffer = new Note[(int)Math.ceil(getTimeBetweenEighthNotes()*sampleRate/bufferSize)];
+            } else {
+                Note note = getNoteByFrequency(pitch);
+                noteBuffer[noteBufferCounter - 1] = note;
+            }
         }
     }
 
-    // PRIVATES
+    //////////////
+    // PRIVATES //
+    //////////////
+
     // Helper method to get a list of mixers
     private List<Mixer.Info> getMixers() {
         List<Mixer.Info> ret = new ArrayList<>();
@@ -186,5 +190,58 @@ public class SoundInput implements OnsetHandler, PitchDetectionHandler {
             return baseFreq.get(n) + noteOffset;
         }
         return -1.0f;
+    }
+
+    // Helper method to get number of eighth notes per second using bpm
+    private float getEighthNotesPerSecond() {
+        return 30.0f/bpm;
+    }
+
+    // Helper method to get time between to eighth notes
+    private float getTimeBetweenEighthNotes() {
+        return 1.0f/getEighthNotesPerSecond();
+    }
+
+    // Helper method that returns the best fitting note in
+    // eigthth notes intervals
+    private Note getAveragedNote() {
+        int[] counter = new int[3];
+        int max, max_index = -1;
+        max = 0;
+        for(Note n : noteBuffer) {
+            if(n == Note.F) {
+                counter[0]++;
+                if (counter[0] > max){
+                    max = counter[0];
+                    max_index = 0;
+                }
+            }
+            else if(n == Note.G) {
+                counter[1]++;
+                if (counter[1] > max){
+                    max = counter[1];
+                    max_index = 1;
+                }
+            }
+            else if(n == Note.A) {
+                counter[2]++;
+                if (counter[2] > max){
+                    max = counter[2];
+                    max_index = 2;
+                }
+            }
+        }
+
+        if(max > threshold) {
+            if(max_index == 0) {
+                return Note.F;
+            } else if (max_index == 1) {
+                return Note.G;
+            } else if (max_index == 2) {
+                return Note.A;
+            }
+        }
+
+        return Note.None;
     }
 }
